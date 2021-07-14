@@ -278,6 +278,15 @@ namespace Nevoweb.DNN.NBrightBuyMigrate
                                     CategoryData.DataRecord.SetXmlProperty("genxml/checkbox/chkdisable", "False");
                                     CategoryData.DataRecord.SetXmlProperty("genxml/dropdownlist/ddlgrouptype", "cat");
 
+                                    // added on 27-04-2021 to update images
+                                    if (cD_ImageURL != null && cD_ImageURL != "")
+                                    {
+                                        var imagefilename = Path.GetFileName(cD_ImageURL);
+                                        CategoryData.DataRecord.SetXmlProperty("genxml/hidden/imageurl", StoreSettings.Current.FolderImages.TrimEnd('/') + "/" + imagefilename);
+                                        CategoryData.DataRecord.SetXmlProperty("genxml/hidden/imagepath", StoreSettings.Current.FolderImagesMapPath.TrimEnd('\\') + "\\" + imagefilename);
+                                    } 
+                                    // end
+
                                     if (cD_ParentCategoryID != null && cD_ParentCategoryID != "0") CategoryData.DataRecord.SetXmlProperty("genxml/dropdownlist/ddlparentcatid", cD_ParentCategoryID);
 
                                     // Populate DATA CATEGORY LANG
@@ -289,7 +298,15 @@ namespace Nevoweb.DNN.NBrightBuyMigrate
                                     if (cL_MetaKeywords != null && cL_MetaKeywords != "") CategoryData.DataLangRecord.SetXmlProperty("genxml/textbox/txtmetakeywords", cL_MetaKeywords);
                                     if (cL_SEOPageTitle != null && cL_SEOPageTitle != "") CategoryData.DataLangRecord.SetXmlProperty("genxml/textbox/txtseopagetitle", cL_SEOPageTitle);
                                     if (cL_SEOName != null && cL_SEOName != "") CategoryData.DataLangRecord.SetXmlProperty("genxml/textbox/txtseoname", cL_SEOName);
-                                    if (cL_Message != null && cL_Message != "") CategoryData.DataLangRecord.SetXmlProperty("genxml/edt/message", cL_Message);
+                                    //if (cL_Message != null && cL_Message != "") CategoryData.DataLangRecord.SetXmlProperty("genxml/edt/message", cL_Message);
+                                    // added on 27-04-2021 to update message
+                                    if (cL_Message != null && cL_Message != "")
+                                    {
+                                        CategoryData.DataLangRecord.SetXmlProperty("genxml/edt", "");
+                                        CategoryData.DataLangRecord.SetXmlProperty("genxml/edt/message", cL_Message);
+                                        CategoryData.DataLangRecord.SetXmlProperty("genxml/textbox/message", cL_Message);
+                                    } 
+                                    // end
 
                                     categoryListIDGiud.Add(CategoryData.CategoryRef, CategoryData.CategoryId);
                                     if (cD_ParentCategoryID != null && cD_ParentCategoryID != "" && cD_ParentCategoryID != "0")
@@ -423,14 +440,49 @@ namespace Nevoweb.DNN.NBrightBuyMigrate
                                         var InputCustomFieldsXml = new XmlDocument();
                                         InputCustomFieldsXml.Load(new StringReader(nod.SelectSingleNode("NB_Store_ProductsInfo/XMLData").InnerText));
                                         var nodListCustom = InputCustomFieldsXml.SelectSingleNode("genxml");
-                                        var custominfo = new NBrightInfo();
-                                        custominfo.XMLData = nodListCustom.OuterXml;
+                                        //var custominfo = new NBrightInfo();
+                                        //custominfo.XMLData = nodListCustom.OuterXml;
 
                                         // ***************************
                                         // process custom fields here.
                                         // ***************************
 
+                                        #region CUSTOM TEXTBOXES - NO SPECIAL PROCESSING REQUIRED
+                                        List<String> LangCustomField = new List<string>()
+                                        {
+                                            "txtedit", "txtedit2", "txtedit3", "txtedit4", "txtedit5"
+                                        };
 
+                                        var CustomListTextbox = nodListCustom.SelectSingleNode("edt");
+                                        foreach (XmlNode nodoTexbox in CustomListTextbox.ChildNodes)
+                                        {
+                                            if (nodoTexbox.InnerText != null)
+                                            {
+                                                if (LangCustomField.Contains(nodoTexbox.Name))
+                                                {
+                                                    // se il campo è in lingua
+                                                    productData.DataLangRecord.SetXmlProperty("genxml/edt/" + nodoTexbox.Name, nodoTexbox.InnerText);
+                                                }
+                                                else
+                                                {
+                                                    // se il campo non è in lingua e vado anche a effettuare trasformazioni e modifiche per alcuni campi
+                                                    productData.DataRecord.SetXmlProperty("genxml/edt/" + nodoTexbox.Name, nodoTexbox.InnerText);
+                                                }
+                                            }
+                                        }
+
+                                        #region for custom checkboxes
+                                        var CustomCheckbox = nodListCustom.SelectSingleNode("checkbox");
+                                        foreach (XmlNode chkbox in CustomCheckbox.ChildNodes)
+                                        {
+                                            if (chkbox.InnerText != null)
+                                            {
+                                                productData.DataLangRecord.SetXmlProperty("genxml/checkbox/" + chkbox.Name, chkbox.InnerText);
+                                            }
+                                        }
+                                        #endregion
+
+                                        #endregion
 
                                     }
 
